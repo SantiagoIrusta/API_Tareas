@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Lista de Tareas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>📝 Mis Tareas</h1>
+
+        <form id="formulario" class="formulario">
+            <input type="text" id="titulo" placeholder="Escribí una nueva tarea..." required />
+            <button type="submit">Agregar</button>
+        </form>
+
+        <ul id="lista-tareas" class="tarea-lista"></ul>
+    </div>
+
+    <script>
+        const lista = document.getElementById('lista-tareas');
+        const form = document.getElementById('formulario');
+        const input = document.getElementById('titulo');
+
+        async function cargarTareas() {
+            const res = await fetch('/tareas');
+            const tareas = await res.json();
+            lista.innerHTML = '';
+
+            tareas.forEach(t => {
+                const li = document.createElement('li');
+                li.className = t.hecho ? 'hecha' : '';
+
+                li.innerHTML = `
+          <span>${t.titulo}</span>
+          <div>
+            <button onclick="toggleHecho(${t.id})">${t.hecho ? '❌' : '✔️'}</button>
+            <button onclick="eliminarTarea(${t.id})">🗑️</button>
+          </div>
+        `;
+                lista.appendChild(li);
+            });
+        }
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            await fetch('/tareas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: Date.now(), titulo: input.value, hecho: false })
+            });
+            input.value = '';
+            cargarTareas();
+        });
+
+        async function toggleHecho(id) {
+            await fetch(`/tareas/${id}`, { method: 'PATCH' });
+            cargarTareas();
+        }
+
+        async function eliminarTarea(id) {
+            await fetch(`/tareas/${id}`, { method: 'DELETE' });
+            cargarTareas();
+        }
+
+        cargarTareas();
+    </script>
+</body>
+
+</html>
